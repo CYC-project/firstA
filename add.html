@@ -1,140 +1,98 @@
-function doGet(e) {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(10000)) {
-    return ContentService.createTextOutput("系統忙碌中，請稍後再試。");
-  }
-
-  try {
-    var action = e.parameter.action || "borrow"; 
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-    // ==========================================
-    // 動作 0：使用者登入驗證 (供 login.html 使用)
-    // ==========================================
-    if (action === "login") {
-      var user = e.parameter.user ? String(e.parameter.user).trim() : "";
-      var pass = e.parameter.pass ? String(e.parameter.pass).trim() : "";
-
-      if (!user || !pass) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, msg: "請輸入帳號與密碼" }))
-          .setMimeType(ContentService.MimeType.JSON);
-      }
-
-      var userSheet = ss.getSheetByName("使用者");
-      if (!userSheet) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, msg: "找不到「使用者」工作表" }))
-          .setMimeType(ContentService.MimeType.JSON);
-      }
-
-      var users = userSheet.getDataRange().getValues();
-      for (var u = 1; u < users.length; u++) {
-        if (String(users[u][0]).trim() === user && String(users[u][1]).trim() === pass) {
-          return ContentService.createTextOutput(JSON.stringify({ 
-            success: true, 
-            name: String(users[u][2]).trim() || user 
-          })).setMimeType(ContentService.MimeType.JSON);
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增設備</title>
+    <script>
+        if (sessionStorage.getItem("isLoggedIn") !== "true") {
+            window.location.href = "login.html";
         }
-      }
-
-      return ContentService.createTextOutput(JSON.stringify({ success: false, msg: "帳號或密碼錯誤！" }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // 取得設備清單工作表
-    var sheet = ss.getSheetByName("工作表1"); 
-    var data = sheet.getDataRange().getValues();
-
-    // ==========================================
-    // 動作 1：取得所有設備清單 (供 list.html 使用)
-    // ==========================================
-    if (action === "list") {
-      var list = [];
-      for (var j = 1; j < data.length; j++) {
-        if (data[j][0]) {
-          list.push({
-            id: String(data[j][0]).trim(),
-            name: String(data[j][1]).trim(),
-            status: String(data[j][2]).trim(),
-            note: String(data[j][3]).trim(),
-            brand: String(data[j][4]).trim()
-          });
-        }
-      }
-      return ContentService.createTextOutput(JSON.stringify(list))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // ==========================================
-    // 動作 2：新增設備 (供 add.html 使用)
-    // ==========================================
-    if (action === "add") {
-      var newId = e.parameter.id ? String(e.parameter.id).trim() : "";
-      var newName = e.parameter.name ? String(e.parameter.name).trim() : "";
-      var newBrand = e.parameter.brand ? String(e.parameter.brand).trim() : "";
-
-      if (!newId || !newName) {
-        return ContentService.createTextOutput("【新增失敗】請輸入設備編號與名稱！");
-      }
-
-      for (var k = 1; k < data.length; k++) {
-        if (String(data[k][0]).trim() === newId) {
-          return ContentService.createTextOutput("【新增失敗】設備編號「" + newId + "」已存在！");
-        }
-      }
-
-      sheet.appendRow([newId, newName, "可借用", "", newBrand]);
-      return ContentService.createTextOutput("【新增成功】設備「" + newName + "」已成功加入清單！");
-    }
-
-    // ==========================================
-    // 動作 3：借用 / 歸還 操作 (供 index.html 使用)
-    // ==========================================
-    var equipmentId = e.parameter.id; 
-    var userName = e.parameter.userName ? String(e.parameter.userName).trim() : "未記錄使用者";
-
-    if (!equipmentId) {
-      return ContentService.createTextOutput("請提供設備 ID，例如：?id=1001");
-    }
-
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === String(equipmentId).trim()) { 
+    </script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f8f9fa; margin: 0; }
+        .header-nav { max-width: 500px; margin: 0 auto 15px auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-group { display: flex; gap: 8px; }
+        .nav-btn { text-decoration: none; padding: 8px 14px; background-color: #6c757d; color: white; border-radius: 5px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
+        .btn-scan { background-color: #007bff; }
         
-        var currentStatus = String(data[i][2]).trim();
-        var eqName = data[i][1];
-        var eqBrand = data[i][4];
-        
-        // --- 借用邏輯 ---
-        if (action === "borrow") {
-          if (currentStatus === "可借用") {
-            var now = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy/MM/dd HH:mm");
-            var noteText = userName + " (" + now + ")";
+        .card-container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-container h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
-            sheet.getRange(i + 1, 3).setValue("借出中");
-            sheet.getRange(i + 1, 4).setValue(noteText);
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        .btn-submit { width: 100%; padding: 12px; background-color: #17a2b8; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .btn-submit:disabled { background-color: #a5d8e1; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="header-nav">
+        <h2 style="margin: 0;">➕ 新增設備</h2>
+        <div class="nav-group">
+            <a href="index.html" class="nav-btn btn-scan">📷 掃描頁面</a>
+            <a href="list.html" class="nav-btn">📋 設備清單</a>
+        </div>
+    </div>
+
+    <div class="card-container">
+        <h3>設備資訊填寫</h3>
+        <div class="form-group">
+            <label for="add-id">設備編號 (ID) *</label>
+            <input type="text" id="add-id" placeholder="例如：1005">
+        </div>
+        <div class="form-group">
+            <label for="add-name">設備名稱 *</label>
+            <input type="text" id="add-name" placeholder="例如：平板電腦">
+        </div>
+        <div class="form-group">
+            <label for="add-brand">廠牌 / 型號</label>
+            <input type="text" id="add-brand" placeholder="例如：APPLE">
+        </div>
+        <button id="btn-add" class="btn-submit" onclick="addEquipment()">確認新增設備</button>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyhmwNC-7PjK8UqqGaV1FMIHC5-mjtA1hcoijkdSx7oChrPx-VHkwJbiOvqmhN-sgfU/exec"; 
+
+        function addEquipment() {
+            const idInput = document.getElementById('add-id');
+            const nameInput = document.getElementById('add-name');
+            const brandInput = document.getElementById('add-brand');
+            const submitBtn = document.getElementById('btn-add');
+
+            const id = idInput.value.trim();
+            const name = nameInput.value.trim();
+            const brand = brandInput.value.trim();
+
+            if (!id || !name) {
+                alert("請填寫【設備編號】與【設備名稱】！");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "資料處理中...";
+
+            const url = `${API_URL}?action=add&id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&brand=${encodeURIComponent(brand)}`;
             
-            return ContentService.createTextOutput("【借用成功】\n" + eqBrand + " " + eqName + "\n借用人：" + userName);
-          } else {
-            return ContentService.createTextOutput("【借用失敗】該設備目前狀態為：" + currentStatus);
-          }
-        } 
-        // --- 歸還邏輯 ---
-        else if (action === "return") {
-          if (currentStatus === "借出中") {
-            sheet.getRange(i + 1, 3).setValue("可借用");
-            sheet.getRange(i + 1, 4).setValue("");
-            
-            return ContentService.createTextOutput("【歸還成功】\n" + eqBrand + " " + eqName + " 已歸還。");
-          } else {
-            return ContentService.createTextOutput("【歸還失敗】該設備未借出，目前狀態為：" + currentStatus);
-          }
-        } else {
-          return ContentService.createTextOutput("未知的操作指令！");
+            fetch(url, { redirect: "follow" })
+                .then(response => response.text())
+                .then(msg => {
+                    alert(msg);
+                    if (msg.includes("成功")) {
+                        window.location.href = "list.html";
+                    }
+                })
+                .catch(err => {
+                    alert("新增設備時發生錯誤！");
+                    console.error(err);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "確認新增設備";
+                });
         }
-      }
-    }
-    return ContentService.createTextOutput("找不到設備編號：" + equipmentId);
-
-  } finally {
-    lock.releaseLock();
-  }
-}
+    </script>
+</body>
+</html>
