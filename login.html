@@ -33,7 +33,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbydzCmBC4lt39wooP7syjnKSIWpL6u0yHshsNOj_4PVuHxKDlLdRABauw2YsYWM2iDS/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxI58qgh5GuGcQtJL8y5DaYZ91DRqcuvm_Iv8QmRlvS3QcEe6HETD3nG01BBS6Fr4fM/exec";
 
         function handleLogin() {
             const user = document.getElementById('username').value.trim();
@@ -55,6 +55,7 @@
                 .then(data => {
                     if (data.success) {
                         sessionStorage.setItem("isLoggedIn", "true");
+                        sessionStorage.setItem("userId", data.userId);
                         sessionStorage.setItem("userName", data.name);
                         window.location.href = "index.html";
                     } else {
