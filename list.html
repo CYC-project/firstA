@@ -11,19 +11,20 @@
     </script>
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: #f8f9fa; margin: 0; }
-        .header-nav { max-width: 650px; margin: 0 auto 15px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .nav-group { display: flex; gap: 8px; }
-        .nav-btn { text-decoration: none; padding: 8px 14px; background-color: #007bff; color: white; border-radius: 5px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
+        .header-nav { max-width: 700px; margin: 0 auto 15px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .nav-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-btn { text-decoration: none; padding: 8px 12px; background-color: #007bff; color: white; border-radius: 5px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
         .btn-add { background-color: #17a2b8; }
+        .btn-history { background-color: #6f42c1; }
         .btn-logout { background-color: #dc3545; }
         
-        .card-container { max-width: 650px; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-container { max-width: 700px; margin: 0 auto 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; }
         .card-container h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
 
         .search-box { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; margin-bottom: 15px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 450px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         th { background-color: #f1f3f5; }
         
         .status-available { color: #28a745; font-weight: bold; }
@@ -38,12 +39,13 @@
         <h2 style="margin: 0;">📋 設備狀態清單</h2>
         <div class="nav-group">
             <a href="add.html" class="nav-btn btn-add">➕ 新增設備</a>
+            <a href="history.html" class="nav-btn btn-history">📜 借還紀錄</a>
             <a href="index.html" class="nav-btn">📷 掃描頁面</a>
             <button class="nav-btn btn-logout" onclick="logout()">登出</button>
         </div>
     </div>
 
-    <div style="max-width: 650px; margin: 0 auto;">
+    <div style="max-width: 700px; margin: 0 auto;">
         <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋設備編號、名稱或借用人..." onkeyup="filterList()">
     </div>
 
@@ -58,7 +60,7 @@
                 <tr>
                     <th>編號</th>
                     <th>設備名稱</th>
-                    <th>借用人 / 時間</th>
+                    <th>借用人 (帳號) / 時間</th>
                     <th>狀態</th>
                 </tr>
             </thead>
@@ -89,7 +91,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbydzCmBC4lt39wooP7syjnKSIWpL6u0yHshsNOj_4PVuHxKDlLdRABauw2YsYWM2iDS/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbxI58qgh5GuGcQtJL8y5DaYZ91DRqcuvm_Iv8QmRlvS3QcEe6HETD3nG01BBS6Fr4fM/exec"; 
         let equipmentData = [];
 
         function logout() {
