@@ -38,15 +38,15 @@
     <div class="header-nav">
         <h2 style="margin: 0;">📋 設備狀態清單</h2>
         <div class="nav-group">
-            <a href="add.html" class="nav-btn btn-add">➕ 新增設備</a>
-            <a href="history.html" class="nav-btn btn-history">📜 借還紀錄</a>
+            <a id="btn-nav-add" href="add.html" class="nav-btn btn-add" style="display:none;">➕ 新增設備</a>
+            <a id="btn-nav-history" href="history.html" class="nav-btn btn-history">📜 我的紀錄</a>
             <a href="index.html" class="nav-btn">📷 掃描頁面</a>
             <button class="nav-btn btn-logout" onclick="logout()">登出</button>
         </div>
     </div>
 
     <div style="max-width: 700px; margin: 0 auto;">
-        <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋設備編號、名稱或借用人..." onkeyup="filterList()">
+        <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋設備編號或名稱..." onkeyup="filterList()">
     </div>
 
     <!-- 1. 借出中設備區塊 -->
@@ -60,7 +60,7 @@
                 <tr>
                     <th>編號</th>
                     <th>設備名稱</th>
-                    <th>借用人 (帳號) / 時間</th>
+                    <th id="th-borrow-info">借出時間</th>
                     <th>狀態</th>
                 </tr>
             </thead>
@@ -91,8 +91,17 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyy6X_URRVXscC0DXdfVR52f5iizuuz_Yfjd-7Yw8WFE3Y_fVwFjHnSdtiD_Oy2Na6f/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwCXpzEv3Zz3ZYCBu0R6E9vGAWydFemrIxJJQRdmLOYZpb-A0bCXxeF1v2TDdcAheEI/exec"; 
+        const currentUserRole = sessionStorage.getItem("userRole") || "student";
+        const isAdmin = (currentUserRole === "管理者");
         let equipmentData = [];
+
+        if (isAdmin) {
+            document.getElementById('btn-nav-add').style.display = "inline-block";
+            document.getElementById('btn-nav-history').innerText = "📜 全部紀錄";
+            document.getElementById('th-borrow-info').innerText = "借用人 (帳號) / 時間";
+            document.getElementById('search-input').placeholder = "🔍 搜尋設備編號、名稱或借用人...";
+        }
 
         function logout() {
             sessionStorage.clear();
@@ -109,7 +118,7 @@
         }
 
         function fetchEquipmentList() {
-            fetch(`${API_URL}?action=list`, { redirect: "follow" })
+            fetch(`${API_URL}?action=list&role=${encodeURIComponent(currentUserRole)}`, { redirect: "follow" })
                 .then(response => response.json())
                 .then(data => {
                     equipmentData = data;
@@ -169,7 +178,7 @@
                 item.id.toLowerCase().includes(query) || 
                 item.name.toLowerCase().includes(query) || 
                 item.brand.toLowerCase().includes(query) ||
-                (item.note && item.note.toLowerCase().includes(query))
+                (isAdmin && item.note && item.note.toLowerCase().includes(query))
             );
             renderLists(filtered);
         }
