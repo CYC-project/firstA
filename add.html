@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>新增設備</title>
     <script>
+        const roleCheck = sessionStorage.getItem("userRole");
         if (sessionStorage.getItem("isLoggedIn") !== "true") {
             window.location.href = "login.html";
+        } else if (roleCheck !== "管理者") {
+            alert("權限不足，僅限管理者進入此頁面！");
+            window.location.href = "index.html";
         }
     </script>
     <style>
@@ -54,7 +58,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyy6X_URRVXscC0DXdfVR52f5iizuuz_Yfjd-7Yw8WFE3Y_fVwFjHnSdtiD_Oy2Na6f/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwCXpzEv3Zz3ZYCBu0R6E9vGAWydFemrIxJJQRdmLOYZpb-A0bCXxeF1v2TDdcAheEI/exec"; 
 
         function addEquipment() {
             const idInput = document.getElementById('add-id');
@@ -65,6 +69,7 @@
             const id = idInput.value.trim();
             const name = nameInput.value.trim();
             const brand = brandInput.value.trim();
+            const role = sessionStorage.getItem("userRole") || "student";
 
             if (!id || !name) {
                 alert("請填寫【設備編號】與【設備名稱】！");
@@ -74,7 +79,7 @@
             submitBtn.disabled = true;
             submitBtn.innerText = "資料處理中...";
 
-            const url = `${API_URL}?action=add&id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&brand=${encodeURIComponent(brand)}`;
+            const url = `${API_URL}?action=add&role=${encodeURIComponent(role)}&id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}&brand=${encodeURIComponent(brand)}`;
             
             fetch(url, { redirect: "follow" })
                 .then(response => response.text())
