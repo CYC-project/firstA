@@ -31,7 +31,7 @@
     <div class="header-nav">
         <h2 id="page-title" style="margin: 0;">📜 我的借還紀錄</h2>
         <div class="nav-group">
-            <a href="list.html" class="nav-btn btn-list">📋 設備清單</a>
+            <a id="btn-nav-list" href="list.html" class="nav-btn btn-list" style="display:none;">📋 設備清單</a>
             <a href="index.html" class="nav-btn">📷 掃描頁面</a>
             <button class="nav-btn btn-logout" onclick="logout()">登出</button>
         </div>
@@ -60,7 +60,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwCXpzEv3Zz3ZYCBu0R6E9vGAWydFemrIxJJQRdmLOYZpb-A0bCXxeF1v2TDdcAheEI/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby0vjT9VcFy-sNTTPO985B6yvClfULRUCLf86uhPMqy_huwyxLhloUfVDExLw9_ZZEp/exec";
         const myId = sessionStorage.getItem("userId") || "";
         const myRole = sessionStorage.getItem("userRole") || "student";
         const isAdmin = (myRole === "管理者");
@@ -68,6 +68,7 @@
 
         if (isAdmin) {
             document.getElementById('page-title').innerText = "📜 全部設備借還紀錄 (管理者)";
+            document.getElementById('btn-nav-list').style.display = "inline-block";
             document.getElementById('search-input').placeholder = "🔍 搜尋設備編號、設備名稱、借用者帳號或姓名...";
         }
 
