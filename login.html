@@ -33,7 +33,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyy6X_URRVXscC0DXdfVR52f5iizuuz_Yfjd-7Yw8WFE3Y_fVwFjHnSdtiD_Oy2Na6f/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwCXpzEv3Zz3ZYCBu0R6E9vGAWydFemrIxJJQRdmLOYZpb-A0bCXxeF1v2TDdcAheEI/exec";
 
         function handleLogin() {
             const user = document.getElementById('username').value.trim();
@@ -57,6 +57,7 @@
                         sessionStorage.setItem("isLoggedIn", "true");
                         sessionStorage.setItem("userId", data.userId);
                         sessionStorage.setItem("userName", data.name);
+                        sessionStorage.setItem("userRole", data.role);
                         window.location.href = "index.html";
                     } else {
                         errorDiv.innerText = data.msg || "登入失敗";
