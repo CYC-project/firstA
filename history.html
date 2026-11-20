@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備借還歷史紀錄</title>
+    <title>借還歷史紀錄</title>
     <script>
         if (sessionStorage.getItem("isLoggedIn") !== "true") {
             window.location.href = "login.html";
@@ -29,7 +29,7 @@
 <body>
 
     <div class="header-nav">
-        <h2 style="margin: 0;">📜 設備借還歷史紀錄</h2>
+        <h2 id="page-title" style="margin: 0;">📜 我的借還紀錄</h2>
         <div class="nav-group">
             <a href="list.html" class="nav-btn btn-list">📋 設備清單</a>
             <a href="index.html" class="nav-btn">📷 掃描頁面</a>
@@ -38,7 +38,7 @@
     </div>
 
     <div style="max-width: 900px; margin: 0 auto;">
-        <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋設備編號、設備名稱、借用者帳號或姓名..." onkeyup="filterLogs()">
+        <input type="text" id="search-input" class="search-box" placeholder="🔍 搜尋設備編號或設備名稱..." onkeyup="filterLogs()">
     </div>
 
     <div class="card-container">
@@ -60,8 +60,16 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyy6X_URRVXscC0DXdfVR52f5iizuuz_Yfjd-7Yw8WFE3Y_fVwFjHnSdtiD_Oy2Na6f/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwCXpzEv3Zz3ZYCBu0R6E9vGAWydFemrIxJJQRdmLOYZpb-A0bCXxeF1v2TDdcAheEI/exec";
+        const myId = sessionStorage.getItem("userId") || "";
+        const myRole = sessionStorage.getItem("userRole") || "student";
+        const isAdmin = (myRole === "管理者");
         let allLogs = [];
+
+        if (isAdmin) {
+            document.getElementById('page-title').innerText = "📜 全部設備借還紀錄 (管理者)";
+            document.getElementById('search-input').placeholder = "🔍 搜尋設備編號、設備名稱、借用者帳號或姓名...";
+        }
 
         function logout() {
             sessionStorage.clear();
@@ -78,11 +86,11 @@
         }
 
         function fetchLogs() {
-            fetch(`${API_URL}?action=logs`, { redirect: "follow" })
+            fetch(`${API_URL}?action=logs&role=${encodeURIComponent(myRole)}&userId=${encodeURIComponent(myId)}`, { redirect: "follow" })
                 .then(res => res.json())
                 .then(data => {
                     allLogs = data;
-                    renderLogs(data);
+                    renderLogs(allLogs);
                 })
                 .catch(err => {
                     console.error("讀取紀錄失敗", err);
@@ -122,8 +130,7 @@
             const filtered = allLogs.filter(item =>
                 item.eqId.toLowerCase().includes(q) ||
                 item.eqName.toLowerCase().includes(q) ||
-                item.userId.toLowerCase().includes(q) ||
-                item.userName.toLowerCase().includes(q)
+                (isAdmin && (item.userId.toLowerCase().includes(q) || item.userName.toLowerCase().includes(q)))
             );
             renderLogs(filtered);
         }
