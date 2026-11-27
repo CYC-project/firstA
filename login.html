@@ -13,6 +13,9 @@
         .form-group input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
         .btn-login { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
         .btn-login:disabled { background-color: #80bdff; cursor: not-allowed; }
+        .register-link { text-align: center; margin-top: 15px; font-size: 14px; }
+        .register-link a { color: #28a745; text-decoration: none; font-weight: bold; }
+        .register-link a:hover { text-decoration: underline; }
         #error-msg { color: #dc3545; text-align: center; margin-top: 12px; font-size: 14px; font-weight: bold; min-height: 20px; }
     </style>
 </head>
@@ -30,10 +33,13 @@
         </div>
         <button id="btn-login" class="btn-login" onclick="handleLogin()">登入</button>
         <div id="error-msg"></div>
+        <div class="register-link">
+            還沒有帳號？<a href="register.html">立即註冊</a>
+        </div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycby0vjT9VcFy-sNTTPO985B6yvClfULRUCLf86uhPMqy_huwyxLhloUfVDExLw9_ZZEp/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxKKcqfs7J8mkDRVTehMa5K9yYiZ6CjGpest4hXpxWmEZjBAMrwVO-MXb2VRnt34oMu/exec";
 
         function handleLogin() {
             const user = document.getElementById('username').value.trim();
