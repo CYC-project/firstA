@@ -77,14 +77,22 @@
     <div id="result">相機啟動中，請稍候...</div>
 
     <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby0vjT9VcFy-sNTTPO985B6yvClfULRUCLf86uhPMqy_huwyxLhloUfVDExLw9_ZZEp/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbxKKcqfs7J8mkDRVTehMa5K9yYiZ6CjGpest4hXpxWmEZjBAMrwVO-MXb2VRnt34oMu/exec"; 
 
     const currentUserId = sessionStorage.getItem("userId") || "未記錄帳號";
     const currentUserName = sessionStorage.getItem("userName") || "使用者";
     const currentUserRole = sessionStorage.getItem("userRole") || "student";
     const isAdmin = (currentUserRole === "管理者");
 
-    document.getElementById('user-display').innerText = `👤 ${currentUserName} (${currentUserId})${isAdmin ? ' [管理者]' : ''}`;
+    const roleMap = {
+        "管理者": "管理者",
+        "teacher": "老師",
+        "student": "學生"
+    };
+    const roleLabel = roleMap[currentUserRole] || currentUserRole;
+
+    document.getElementById('user-display').innerText = `👤 ${currentUserName} (${currentUserId}) [${roleLabel}]`;
+    
     if (isAdmin) {
         document.getElementById('btn-nav-add').style.display = "inline-block";
         document.getElementById('btn-nav-list').style.display = "inline-block";
