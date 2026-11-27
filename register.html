@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>帳號註冊 - 設備借還系統</title>
+    <!-- 載入 Google Identity Services 套件 -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         body { font-family: sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
         .register-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 360px; }
         .register-box h2 { text-align: center; margin-top: 0; color: #333; }
+        .google-section { background-color: #f1f3f5; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 18px; border: 1px dashed #ced4da; }
+        .google-status { font-size: 13px; font-weight: bold; color: #495057; margin-top: 8px; }
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
         .form-group input, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; background-color: white; }
         .btn-register { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 5px; }
-        .btn-register:disabled { background-color: #94d3a2; cursor: not-allowed; }
+        .btn-register:disabled { background-color: #adb5bd; cursor: not-allowed; }
         .login-link { text-align: center; margin-top: 15px; font-size: 14px; }
         .login-link a { color: #007bff; text-decoration: none; font-weight: bold; }
         .login-link a:hover { text-decoration: underline; }
@@ -23,30 +27,53 @@
 
     <div class="register-box">
         <h2>📝 註冊新帳號</h2>
+
+        <!-- 步驟一：Google 帳號驗證區 -->
+        <div class="google-section">
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #333;">步驟 1：先驗證 Google 帳號</div>
+            <div style="display: flex; justify-content: center;">
+                <div id="g_id_onload"
+                     data-client_id="請替換成你的_GOOGLE_CLIENT_ID"
+                     data-callback="handleGoogleCredential"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-size="large"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-shape="rectangular"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <div id="google-status" class="google-status">尚未驗證 Google 帳號</div>
+        </div>
+
+        <!-- 步驟二：填寫系統註冊資料 -->
         <div class="form-group">
-            <label for="reg-user">帳號 *</label>
-            <input type="text" id="reg-user" placeholder="請輸入學號或自訂帳號">
+            <label for="reg-user">系統帳號 (不可重複) *</label>
+            <input type="text" id="reg-user" placeholder="請輸入學號或自訂帳號" disabled>
         </div>
         <div class="form-group">
             <label for="reg-name">姓名 *</label>
-            <input type="text" id="reg-name" placeholder="請輸入真實姓名">
+            <input type="text" id="reg-name" placeholder="請輸入真實姓名" disabled>
         </div>
         <div class="form-group">
             <label for="reg-role">身份 *</label>
-            <select id="reg-role">
+            <select id="reg-role" disabled>
                 <option value="student">學生 (student)</option>
                 <option value="teacher">老師 (teacher)</option>
             </select>
         </div>
         <div class="form-group">
-            <label for="reg-pass">密碼 *</label>
-            <input type="password" id="reg-pass" placeholder="請設定密碼">
+            <label for="reg-pass">密碼 (不可與他人重複) *</label>
+            <input type="password" id="reg-pass" placeholder="請設定密碼" disabled>
         </div>
         <div class="form-group">
             <label for="reg-pass-confirm">確認密碼 *</label>
-            <input type="password" id="reg-pass-confirm" placeholder="請再次輸入密碼" onkeyup="if(event.key==='Enter') handleRegister()">
+            <input type="password" id="reg-pass-confirm" placeholder="請再次輸入密碼" disabled onkeyup="if(event.key==='Enter') handleRegister()">
         </div>
-        <button id="btn-register" class="btn-register" onclick="handleRegister()">立即註冊</button>
+        <button id="btn-register" class="btn-register" onclick="handleRegister()" disabled>請先完成 Google 驗證</button>
         <div id="msg-box"></div>
         <div class="login-link">
             已有帳號？<a href="login.html">返回登入</a>
@@ -54,7 +81,41 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxKKcqfs7J8mkDRVTehMa5K9yYiZ6CjGpest4hXpxWmEZjBAMrwVO-MXb2VRnt34oMu/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbymDUDTDxyvuE7FBhRx43eVOXQyyOPX2K--HmYPczGHrBDhE4P_nEuCMbDRxHsHB_YV/exec";
+        let verifiedGoogleToken = "";
+
+        // 解析 JWT 取得顯示用的 Email 與姓名
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Google 登入成功回呼函式
+        function handleGoogleCredential(response) {
+            verifiedGoogleToken = response.credential;
+            const payload = parseJwt(verifiedGoogleToken);
+
+            const statusDiv = document.getElementById('google-status');
+            statusDiv.style.color = "#28a745";
+            statusDiv.innerText = `✅ 已驗證：${payload.email}`;
+
+            // 解鎖表單欄位並自動帶入 Google 姓名
+            document.getElementById('reg-user').disabled = false;
+            document.getElementById('reg-name').disabled = false;
+            document.getElementById('reg-role').disabled = false;
+            document.getElementById('reg-pass').disabled = false;
+            document.getElementById('reg-pass-confirm').disabled = false;
+
+            if (!document.getElementById('reg-name').value && payload.name) {
+                document.getElementById('reg-name').value = payload.name;
+            }
+
+            const btn = document.getElementById('btn-register');
+            btn.disabled = false;
+            btn.innerText = "立即註冊";
+        }
 
         function handleRegister() {
             const user = document.getElementById('reg-user').value.trim();
@@ -64,6 +125,12 @@
             const passConfirm = document.getElementById('reg-pass-confirm').value.trim();
             const btn = document.getElementById('btn-register');
             const msgBox = document.getElementById('msg-box');
+
+            if (!verifiedGoogleToken) {
+                msgBox.style.color = "#dc3545";
+                msgBox.innerText = "請先點擊上方按鈕驗證 Google 帳號！";
+                return;
+            }
 
             if (!user || !name || !pass || !passConfirm) {
                 msgBox.style.color = "#dc3545";
@@ -81,7 +148,7 @@
             btn.innerText = "註冊處理中...";
             msgBox.innerText = "";
 
-            const url = `${API_URL}?action=register&user=${encodeURIComponent(user)}&name=${encodeURIComponent(name)}&role=${encodeURIComponent(role)}&pass=${encodeURIComponent(pass)}`;
+            const url = `${API_URL}?action=register&user=${encodeURIComponent(user)}&name=${encodeURIComponent(name)}&role=${encodeURIComponent(role)}&pass=${encodeURIComponent(pass)}&token=${encodeURIComponent(verifiedGoogleToken)}`;
 
             fetch(url, { redirect: "follow" })
                 .then(res => res.json())
